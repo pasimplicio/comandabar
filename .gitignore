@@ -16,3 +16,9 @@ app/build/
 # OS
 .DS_Store
 Thumbs.db
+
+
+# Scripts locais
+*.bat
+git_status.tmp
+Android/
