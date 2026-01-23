@@ -6,9 +6,10 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.comandabar.bar.ui.menu.BarMenuScreen
 
 import com.example.comandabar.ui.HomeScreen
-import com.example.comandabar.ui.menu.BarMenuScreen
+
 import com.example.comandabar.ui.relatorios.RelatoriosScreen
 
 import com.example.comandabar.bar.ui.categoria.CategoriaFormScreen

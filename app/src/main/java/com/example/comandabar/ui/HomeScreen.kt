@@ -1,163 +1,130 @@
 package com.example.comandabar.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ListAlt
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.WineBar
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.comandabar.R
 import com.example.comandabar.ui.components.Footer
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    navController: NavController
-) {
+fun HomeScreen(navController: NavController) {
     Surface(
-        color = MaterialTheme.colorScheme.background,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // TopAppBar ORIGINAL
+            // HEADER COM LOGO
             Surface(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Menu do Bar",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        )
-                    }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Logo ComandaBar",
+                        modifier = Modifier.size(96.dp)
+                    )
 
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                    ) {}
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "ComandaBar",
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+
+                    Text(
+                        text = "Controle inteligente de comandas",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                        )
+                    )
                 }
             }
 
-            // Menu ORIGINAL
+            // CONTEÚDO
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
-                MenuItem(
-                    title = "Gerenciar Clientes",
-                    subtitle = "Cadastrar e editar clientes",
-                    icon = Icons.Default.Person,
-                    onClick = { navController.navigate("clientes") }
-                )
+                ModuleCard(
+                    title = "Módulo Cliente",
+                    subtitle = "Escanear QR Code da Comanda",
+                    icon = Icons.Default.QrCodeScanner
+                ) {
+                    navController.navigate("qrcode")
+                }
 
-                MenuItem(
-                    title = "Gerenciar Categorias",
-                    subtitle = "Cadastrar e editar categorias",
-                    icon = Icons.Default.Category,
-                    onClick = { navController.navigate("categorias") }
-                )
+                ModuleCard(
+                    title = "Módulo Bar",
+                    subtitle = "Gerenciar comandas e produtos",
+                    icon = Icons.Default.WineBar
+                ) {
+                    navController.navigate("bar_menu")
+                }
 
-                MenuItem(
-                    title = "Gerenciar Produtos",
-                    subtitle = "Adicionar e editar produtos",
-                    icon = Icons.Default.LocalBar,
-                    onClick = { navController.navigate("produtos") }
-                )
+                Spacer(modifier = Modifier.weight(1f))
 
-                MenuItem(
-                    title = "Gerar Comanda",
-                    subtitle = "Criar uma comanda para cliente",
-                    icon = Icons.AutoMirrored.Filled.ReceiptLong, // ✅ corrigido
-                    onClick = { navController.navigate("gerar_comanda") }
-                )
-
-                MenuItem(
-                    title = "Ver Comandas Ativas",
-                    subtitle = "Visualizar comandas abertas",
-                    icon = Icons.AutoMirrored.Filled.ListAlt, // ✅ corrigido
-                    onClick = { navController.navigate("lista_comandas") }
-                )
-
-                MenuItem(
-                    title = "Relatórios",
-                    subtitle = "Visualizar vendas e histórico",
-                    icon = Icons.Default.BarChart,
-                    onClick = { navController.navigate("relatorios") }
+                Text(
+                    text = "Sistema de comandas digital - v1.0",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
 
-            // Rodapé ORIGINAL
             Footer()
         }
     }
 }
 
 @Composable
-private fun MenuItem(
+private fun ModuleCard(
     title: String,
     subtitle: String,
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit
 ) {
     Card(
         onClick = onClick,
+        shape = RoundedCornerShape(18.dp),
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        ),
-        shape = MaterialTheme.shapes.large,
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
-            )
+            Icon(icon, contentDescription = null)
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold
-                    )
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.Bold)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall)
             }
+
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
         }
     }
 }

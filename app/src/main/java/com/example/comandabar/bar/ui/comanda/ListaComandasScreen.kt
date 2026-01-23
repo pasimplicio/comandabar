@@ -8,7 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.comandabar.bar.viewmodel.ComandaViewModel
+import com.example.comandabar.ui.components.Footer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,128 +41,138 @@ fun ListaComandasScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // TopAppBar personalizada usando Surface
-            Surface(
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            IconButton(
-                                onClick = { navController.popBackStack() },
-                                modifier = Modifier.size(48.dp)
-                            ) {
-                                Icon(
-                                    // CORRIGIDO AQUI
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Voltar",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-
-                            Text(
-                                text = "Comandas Ativas",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            )
-                        }
-                    }
-
-                    // Linha decorativa
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                    ) {}
-                }
-            }
-
-            if (comandasAtivas.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(40.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        // CORRIGIDO AQUI
-                        Icons.AutoMirrored.Filled.ReceiptLong,
-                        contentDescription = "Nenhuma comanda",
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        modifier = Modifier.size(96.dp)
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        "Nenhuma comanda ativa",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Vá para 'Gerar Comanda' para começar",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(comandasAtivas) { comanda ->
-                        ComandaCardItem(
-                            comanda = comanda,
-                            isSelected = comanda.id == comandaSelecionada?.id,
-                            onClick = {
-                                comandaViewModel.selecionarComanda(comanda.id)
-                                navController.navigate("comanda_bar")
-                            },
-                            onFecharClick = {
-                                comandaViewModel.fecharComanda(comanda.id)
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Botão para gerar nova comanda
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
-                contentAlignment = Alignment.BottomEnd
+                    .weight(1f)
             ) {
-                FloatingActionButton(
-                    onClick = { navController.navigate("gerar_comanda") },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
-                    modifier = Modifier.size(64.dp)
+                Column(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Nova Comanda",
-                        modifier = Modifier.size(32.dp)
-                    )
+                    // TopAppBar
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    IconButton(
+                                        onClick = { navController.popBackStack() },
+                                        modifier = Modifier.size(48.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "Voltar",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+
+                                    Text(
+                                        text = "Comandas Ativas",
+                                        style = MaterialTheme.typography.titleLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                            ) {}
+                        }
+                    }
+
+                    if (comandasAtivas.isEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(40.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ReceiptLong,
+                                contentDescription = "Nenhuma comanda",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                modifier = Modifier.size(96.dp)
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(
+                                "Nenhuma comanda ativa",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "Vá para 'Gerar Comanda' para começar",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            contentPadding = PaddingValues(bottom = 96.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(comandasAtivas) { comanda ->
+                                ComandaCardItem(
+                                    comanda = comanda,
+                                    isSelected = comanda.id == comandaSelecionada?.id,
+                                    onClick = {
+                                        comandaViewModel.selecionarComanda(comanda.id)
+                                        navController.navigate("comanda_bar")
+                                    },
+                                    onFecharClick = {
+                                        comandaViewModel.fecharComanda(comanda.id)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // FAB (mesmo padrão das outras telas: acima do footer)
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    FloatingActionButton(
+                        onClick = { navController.navigate("gerar_comanda") },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White,
+                        modifier = Modifier
+                            .padding(bottom = 80.dp, end = 24.dp)
+                            .size(64.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Nova Comanda",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
             }
+
+            Footer()
         }
     }
 }
@@ -208,18 +220,13 @@ fun ComandaCardItem(
                                 .size(12.dp)
                                 .clip(RoundedCornerShape(50))
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(50))
-                            ) {
-                                Surface(
-                                    color = Color.Green,
-                                    modifier = Modifier.fillMaxSize(),
-                                    shape = RoundedCornerShape(50)
-                                ) {}
-                            }
+                            Surface(
+                                color = Color(0xFF2ECC71),
+                                modifier = Modifier.fillMaxSize(),
+                                shape = RoundedCornerShape(50)
+                            ) {}
                         }
+
                         Text(
                             text = "Comanda #${comanda.id.take(8)}...",
                             style = MaterialTheme.typography.titleMedium.copy(
@@ -243,7 +250,6 @@ fun ComandaCardItem(
                 }
 
                 Icon(
-                    // CORRIGIDO AQUI
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Abrir",
                     tint = MaterialTheme.colorScheme.primary

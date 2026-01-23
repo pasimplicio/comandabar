@@ -1,6 +1,7 @@
 package com.example.comandabar.bar.ui.produtos
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,7 +12,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.comandabar.bar.model.Produto
 import com.example.comandabar.bar.viewmodel.ProdutoViewModel
+import com.example.comandabar.shared.repository.ComandaRepository
 import com.example.comandabar.ui.components.Footer
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,18 +39,16 @@ fun ProdutosBarScreen(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize()
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    // TopAppBar personalizada
+                Column(modifier = Modifier.fillMaxSize()) {
+
+                    // TopAppBar
                     Surface(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.fillMaxWidth()
@@ -66,15 +65,11 @@ fun ProdutosBarScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
-                                    IconButton(
-                                        onClick = onBack,
-                                        modifier = Modifier.size(48.dp)
-                                    ) {
+                                    IconButton(onClick = onBack) {
                                         Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            Icons.AutoMirrored.Filled.ArrowBack,
                                             contentDescription = "Voltar",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(28.dp)
+                                            tint = Color.White
                                         )
                                     }
 
@@ -88,7 +83,6 @@ fun ProdutosBarScreen(
                                 }
                             }
 
-                            // Linha decorativa
                             Surface(
                                 color = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier
@@ -108,22 +102,14 @@ fun ProdutosBarScreen(
                         ) {
                             Icon(
                                 Icons.Default.LocalBar,
-                                contentDescription = "Nenhum produto",
+                                contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                                 modifier = Modifier.size(96.dp)
                             )
                             Spacer(modifier = Modifier.height(24.dp))
                             Text(
                                 "Nenhum produto cadastrado",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                "Adicione seu primeiro produto!",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                style = MaterialTheme.typography.titleLarge
                             )
                         }
                     } else {
@@ -138,14 +124,17 @@ fun ProdutosBarScreen(
                                 ProdutoCard(
                                     produto = produto,
                                     onEditClick = { onEditarProduto(produto.id) },
-                                    onDeleteClick = { produtoParaExcluir = produto }
+                                    onDeleteClick = { produtoParaExcluir = produto },
+                                    onAddToComanda = {
+                                        ComandaRepository.adicionarProduto(produto)
+                                    }
                                 )
                             }
                         }
                     }
                 }
 
-                // Botão flutuante para adicionar - SEMPRE VISÍVEL
+                // FAB
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.BottomEnd
@@ -158,48 +147,17 @@ fun ProdutosBarScreen(
                             .padding(bottom = 80.dp, end = 24.dp)
                             .size(64.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Adicionar Produto",
-                            modifier = Modifier.size(32.dp)
-                        )
+                        Icon(Icons.Default.Add, contentDescription = "Adicionar Produto")
                     }
                 }
 
-                // Dialog de exclusão
+                // Dialog exclusão
                 produtoParaExcluir?.let { produto ->
                     AlertDialog(
                         onDismissRequest = { produtoParaExcluir = null },
-                        title = {
-                            Text(
-                                "Excluir produto?",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
-                        },
+                        title = { Text("Excluir produto?") },
                         text = {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text("Deseja excluir o produto:")
-                                Text(
-                                    "${produto.emoji} ${produto.nome}",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                )
-                                Text(
-                                    "R$ ${"%.2f".format(produto.preco)}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Text(
-                                    "Esta ação não pode ser desfeita.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
+                            Text("${produto.emoji} ${produto.nome}")
                         },
                         confirmButton = {
                             Button(
@@ -208,142 +166,65 @@ fun ProdutosBarScreen(
                                     produtoParaExcluir = null
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error,
-                                    contentColor = Color.White
-                                ),
-                                shape = MaterialTheme.shapes.medium
+                                    containerColor = MaterialTheme.colorScheme.error
+                                )
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Excluir"
-                                    )
-                                    Text("Excluir")
-                                }
+                                Text("Excluir")
                             }
                         },
                         dismissButton = {
-                            OutlinedButton(
-                                onClick = { produtoParaExcluir = null },
-                                shape = MaterialTheme.shapes.medium
-                            ) {
+                            OutlinedButton(onClick = { produtoParaExcluir = null }) {
                                 Text("Cancelar")
                             }
-                        },
-                        shape = MaterialTheme.shapes.large
+                        }
                     )
                 }
             }
 
-            // Rodapé
             Footer()
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProdutoCard(
     produto: Produto,
     onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onAddToComanda: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onAddToComanda() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        )
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.secondaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = produto.emoji,
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                    }
-
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = produto.nome,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "R$ ${"%.2f".format(produto.preco)}",
-                            style = MaterialTheme.typography.titleSmall.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        )
-                        Text(
-                            text = "Categoria: ${produto.categoria.nome}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
+                Column {
+                    Text(produto.nome, fontWeight = FontWeight.Bold)
+                    Text("R$ ${"%.2f".format(produto.preco)}")
                 }
 
-                IconButton(
-                    onClick = onEditClick,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Editar",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                IconButton(onClick = onEditClick) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar")
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedButton(
                 onClick = onDeleteClick,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                ),
-                shape = RoundedCornerShape(12.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Excluir",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text("Excluir Produto")
-                }
+                Icon(Icons.Default.Delete, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Excluir Produto")
             }
         }
     }

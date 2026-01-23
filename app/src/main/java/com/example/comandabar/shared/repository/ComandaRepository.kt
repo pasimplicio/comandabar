@@ -31,13 +31,8 @@ object ComandaRepository {
     }
 
     private fun carregarDadosPersistentes() {
-        // Carregar comandas salvas
         _comandas.value = ComandaDao.carregarComandas()
-
-        // Carregar comanda ativa salva
         _comandaAtiva.value = ComandaDao.carregarComandaAtiva()
-
-        // Carregar comanda selecionada salva
         _comandaSelecionada.value = ComandaDao.carregarComandaSelecionada()
     }
 
@@ -54,32 +49,35 @@ object ComandaRepository {
     }
 
     private fun atualizarComandasAtivas() {
-        _comandasAtivas.value = _comandas.value.filter { it.status == Comanda.Status.ABERTA }
+        _comandasAtivas.value = _comandas.value.filter {
+            it.status == Comanda.Status.ABERTA
+        }
     }
 
     fun verificarClienteTemComandaAberta(cliente: Cliente): Boolean {
         return _comandas.value.any {
-            it.cliente.codigo == cliente.codigo && it.status == Comanda.Status.ABERTA
+            it.cliente.codigo == cliente.codigo &&
+                    it.status == Comanda.Status.ABERTA
         }
     }
 
     fun obterComandaAbertaDoCliente(cliente: Cliente): Comanda? {
         return _comandas.value.find {
-            it.cliente.codigo == cliente.codigo && it.status == Comanda.Status.ABERTA
+            it.cliente.codigo == cliente.codigo &&
+                    it.status == Comanda.Status.ABERTA
         }
     }
 
     fun criarComanda(cliente: Cliente): Result<String> {
-        // Verificar se o cliente já tem comanda aberta
         if (verificarClienteTemComandaAberta(cliente)) {
-            val comandaExistente = obterComandaAbertaDoCliente(cliente)
-            return Result.failure(Exception(
-                "Cliente já tem uma comanda aberta! ID: ${comandaExistente?.id?.take(8)}..."
-            ))
+            val existente = obterComandaAbertaDoCliente(cliente)
+            return Result.failure(
+                Exception("Cliente já tem comanda aberta: ${existente?.id}")
+            )
         }
 
         val id = UUID.randomUUID().toString()
-        val qrCodeData = "COMANDA-$id-${cliente.codigo}"
+        val qrCode = "COMANDA-$id-${cliente.codigo}"
 
         val comanda = Comanda(
             id = id,
@@ -88,18 +86,16 @@ object ComandaRepository {
             status = Comanda.Status.ABERTA,
             criadaEm = System.currentTimeMillis(),
             fechadaEm = null,
-            qrCodeData = qrCodeData
+            qrCodeData = qrCode
         )
 
-        _comandaAtiva.value = comanda
         _comandas.value = _comandas.value + comanda
+        _comandaAtiva.value = comanda
         _comandaSelecionada.value = comanda
 
-        // Persistir dados
         salvarComandas()
         salvarComandaAtiva()
         salvarComandaSelecionada()
-
         atualizarComandasAtivas()
 
         return Result.success(id)
@@ -108,23 +104,17 @@ object ComandaRepository {
     fun adicionarProduto(produto: Produto) {
         val comanda = _comandaAtiva.value ?: return
 
-        val itensAtualizados = comanda.itens.toMutableList()
-        val index = itensAtualizados.indexOfFirst { it.produto.id == produto.id }
+        val itens = comanda.itens.toMutableList()
+        val index = itens.indexOfFirst { it.produto.id == produto.id }
 
         if (index >= 0) {
-            val item = itensAtualizados[index]
-            itensAtualizados[index] =
-                item.copy(quantidade = item.quantidade + 1)
+            val item = itens[index]
+            itens[index] = item.copy(quantidade = item.quantidade + 1)
         } else {
-            itensAtualizados.add(
-                ItemComanda(
-                    produto = produto,
-                    quantidade = 1
-                )
-            )
+            itens.add(ItemComanda(produto))
         }
 
-        atualizarComanda(comanda.copy(itens = itensAtualizados))
+        atualizarComanda(comanda.copy(itens = itens))
     }
 
     private fun atualizarComanda(comanda: Comanda) {
@@ -132,15 +122,11 @@ object ComandaRepository {
         _comandas.value = _comandas.value.map {
             if (it.id == comanda.id) comanda else it
         }
-        if (_comandaSelecionada.value?.id == comanda.id) {
-            _comandaSelecionada.value = comanda
-        }
+        _comandaSelecionada.value = comanda
 
-        // Persistir dados
         salvarComandas()
         salvarComandaAtiva()
         salvarComandaSelecionada()
-
         atualizarComandasAtivas()
     }
 
@@ -149,60 +135,29 @@ object ComandaRepository {
         salvarComandaAtiva()
     }
 
-    fun selecionarComanda(comandaId: String) {
-        val comanda = _comandas.value.find { it.id == comandaId }
-        _comandaSelecionada.value = comanda
+    fun selecionarComanda(id: String) {
+        _comandaSelecionada.value =
+            _comandas.value.find { it.id == id }
         salvarComandaSelecionada()
     }
 
-    fun fecharComanda(comandaId: String) {
+    fun fecharComanda(id: String) {
         _comandas.value = _comandas.value.map {
-            if (it.id == comandaId) {
-                val comandaFechada = it.copy(
+            if (it.id == id)
+                it.copy(
                     status = Comanda.Status.FECHADA,
                     fechadaEm = System.currentTimeMillis()
                 )
-                if (_comandaSelecionada.value?.id == comandaId) {
-                    _comandaSelecionada.value = comandaFechada
-                }
-                if (_comandaAtiva.value?.id == comandaId) {
-                    _comandaAtiva.value = null
-                }
-                comandaFechada
-            } else it
+            else it
         }
 
-        // Persistir dados
+        _comandaAtiva.value = null
         salvarComandas()
         salvarComandaAtiva()
-        salvarComandaSelecionada()
-
         atualizarComandasAtivas()
-    }
-
-    fun getComandasFechadas(): List<Comanda> {
-        return _comandas.value.filter { it.status == Comanda.Status.FECHADA }
-    }
-
-    fun getComandaPorId(id: String): Comanda? {
-        return _comandas.value.find { it.id == id }
     }
 
     fun getComandaPorQrCode(qrCodeData: String): Comanda? {
         return _comandas.value.find { it.qrCodeData == qrCodeData }
-    }
-
-    // Método para limpar todas as comandas (apenas para desenvolvimento)
-    fun limparTodasComandas() {
-        _comandas.value = emptyList()
-        _comandaAtiva.value = null
-        _comandaSelecionada.value = null
-
-        // Persistir
-        salvarComandas()
-        salvarComandaAtiva()
-        salvarComandaSelecionada()
-
-        atualizarComandasAtivas()
     }
 }
