@@ -126,7 +126,10 @@ fun ProdutosBarScreen(
                                     onEditClick = { onEditarProduto(produto.id) },
                                     onDeleteClick = { produtoParaExcluir = produto },
                                     onAddToComanda = {
+                                        // ✅ CORREÇÃO: adiciona na comanda ativa
                                         ComandaRepository.adicionarProduto(produto)
+                                        // ✅ COMPLETA O FLUXO SEM MUDAR O CONCEITO
+                                        onBack()
                                     }
                                 )
                             }
