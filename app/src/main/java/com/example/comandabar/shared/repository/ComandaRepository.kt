@@ -5,12 +5,14 @@ import com.example.comandabar.bar.model.Produto
 import com.example.comandabar.cliente.viewmodel.Cliente
 import com.example.comandabar.shared.model.Comanda
 import com.example.comandabar.shared.model.ItemComanda
+import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
 object ComandaRepository {
+    private val gson = Gson()
 
     private val _comandaAtiva = MutableStateFlow<Comanda?>(null)
     val comandaAtiva: StateFlow<Comanda?> = _comandaAtiva.asStateFlow()
@@ -31,9 +33,15 @@ object ComandaRepository {
     }
 
     private fun carregarDadosPersistentes() {
-        _comandas.value = ComandaDao.carregarComandas()
-        _comandaAtiva.value = ComandaDao.carregarComandaAtiva()
-        _comandaSelecionada.value = ComandaDao.carregarComandaSelecionada()
+        _comandas.value = ComandaDao.carregarComandas().map { comanda ->
+            comanda.copy(qrCodeData = buildQrPayload(comanda))
+        }
+        _comandaAtiva.value = ComandaDao.carregarComandaAtiva()?.let { comanda ->
+            comanda.copy(qrCodeData = buildQrPayload(comanda))
+        }
+        _comandaSelecionada.value = ComandaDao.carregarComandaSelecionada()?.let { comanda ->
+            comanda.copy(qrCodeData = buildQrPayload(comanda))
+        }
     }
 
     private fun salvarComandas() {
@@ -77,17 +85,17 @@ object ComandaRepository {
         }
 
         val id = UUID.randomUUID().toString()
-        val qrCode = "COMANDA-$id-${cliente.codigo}"
 
-        val comanda = Comanda(
+        val baseComanda = Comanda(
             id = id,
             cliente = cliente,
             itens = emptyList(),
             status = Comanda.Status.ABERTA,
             criadaEm = System.currentTimeMillis(),
             fechadaEm = null,
-            qrCodeData = qrCode
+            qrCodeData = ""
         )
+        val comanda = baseComanda.copy(qrCodeData = buildQrPayload(baseComanda))
 
         _comandas.value = _comandas.value + comanda
         _comandaAtiva.value = comanda
@@ -121,11 +129,12 @@ object ComandaRepository {
     }
 
     private fun atualizarComanda(comanda: Comanda) {
-        _comandaAtiva.value = comanda
+        val updatedComanda = comanda.copy(qrCodeData = buildQrPayload(comanda))
+        _comandaAtiva.value = updatedComanda
         _comandas.value = _comandas.value.map {
-            if (it.id == comanda.id) comanda else it
+            if (it.id == updatedComanda.id) updatedComanda else it
         }
-        _comandaSelecionada.value = comanda
+        _comandaSelecionada.value = updatedComanda
 
         salvarComandas()
         salvarComandaAtiva()
@@ -161,6 +170,107 @@ object ComandaRepository {
     }
 
     fun getComandaPorQrCode(qrCodeData: String): Comanda? {
-        return _comandas.value.find { it.qrCodeData == qrCodeData }
+        val normalized = qrCodeData.trim()
+        if (normalized.isEmpty()) {
+            return null
+        }
+        val directMatch = _comandas.value.find {
+            val stored = it.qrCodeData.trim()
+            stored == normalized || stored.contains(normalized) || normalized.contains(stored)
+        }
+        if (directMatch != null) {
+            return directMatch
+        }
+
+        val payload = parseQrPayload(normalized) ?: return null
+        val existing = _comandas.value.find { it.id == payload.id }
+        if (existing != null) {
+            return existing
+        }
+
+        val comandaFromQr = payload.toComanda()
+        _comandas.value = _comandas.value + comandaFromQr
+        _comandaSelecionada.value = comandaFromQr
+        salvarComandas()
+        salvarComandaSelecionada()
+        atualizarComandasAtivas()
+        return comandaFromQr
     }
+
+    private fun buildQrPayload(comanda: Comanda): String {
+        val payload = QrComandaPayload(
+            id = comanda.id,
+            clienteCodigo = comanda.cliente.codigo,
+            clienteNome = comanda.cliente.nome,
+            itens = comanda.itens.map { item ->
+                QrComandaItem(
+                    produtoId = item.produto.id,
+                    produtoNome = item.produto.nome,
+                    produtoPreco = item.produto.preco,
+                    produtoEmoji = item.produto.emoji,
+                    produtoCategoriaId = item.produto.categoria.id,
+                    produtoCategoriaNome = item.produto.categoria.nome,
+                    quantidade = item.quantidade
+                )
+            },
+            status = comanda.status.name,
+            criadaEm = comanda.criadaEm,
+            fechadaEm = comanda.fechadaEm
+        )
+        return gson.toJson(payload)
+    }
+
+    private fun parseQrPayload(qrCodeData: String): QrComandaPayload? {
+        return try {
+            gson.fromJson(qrCodeData, QrComandaPayload::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private data class QrComandaPayload(
+        val id: String,
+        val clienteCodigo: String,
+        val clienteNome: String,
+        val itens: List<QrComandaItem>,
+        val status: String,
+        val criadaEm: Long,
+        val fechadaEm: Long?
+    ) {
+        fun toComanda(): Comanda {
+            val cliente = Cliente(clienteCodigo, clienteNome)
+            val itensConvertidos = itens.map { item ->
+                val produto = Produto(
+                    id = item.produtoId,
+                    nome = item.produtoNome,
+                    preco = item.produtoPreco,
+                    emoji = item.produtoEmoji,
+                    categoria = com.example.comandabar.bar.model.Categoria(
+                        id = item.produtoCategoriaId,
+                        nome = item.produtoCategoriaNome
+                    )
+                )
+                ItemComanda(produto, item.quantidade)
+            }
+            return Comanda(
+                id = id,
+                cliente = cliente,
+                itens = itensConvertidos,
+                status = Comanda.Status.valueOf(status),
+                criadaEm = criadaEm,
+                fechadaEm = fechadaEm,
+                qrCodeData = gson.toJson(this)
+            )
+        }
+    }
+
+    private data class QrComandaItem(
+        val produtoId: String,
+        val produtoNome: String,
+        val produtoPreco: Double,
+        val produtoEmoji: String,
+        val produtoCategoriaId: String,
+        val produtoCategoriaNome: String,
+        val quantidade: Int
+    )
 }

@@ -6,30 +6,36 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.comandabar.cliente.viewmodel.ClienteViewModel
 import com.example.comandabar.shared.repository.ComandaRepository
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import com.example.comandabar.ui.components.QrCodeCard
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClienteComandaScreen(
-    navController: NavController,
-    viewModel: ClienteViewModel = viewModel()
+    navController: NavController
 ) {
     val comandaSelecionada by ComandaRepository.comandaSelecionada.collectAsState()
+    var showQrCodeDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -42,6 +48,17 @@ fun ClienteComandaScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { showQrCodeDialog = true },
+                        enabled = comandaSelecionada != null
+                    ) {
+                        Icon(
+                            Icons.Default.QrCode,
+                            contentDescription = "Mostrar QR Code"
                         )
                     }
                 }
@@ -349,5 +366,24 @@ fun ClienteComandaScreen(
                 }
             }
         }
+    }
+
+    if (showQrCodeDialog && comandaSelecionada != null) {
+        AlertDialog(
+            onDismissRequest = { showQrCodeDialog = false },
+            title = { Text("QR Code da Comanda") },
+            text = {
+                QrCodeCard(
+                    qrCodeData = comandaSelecionada!!.qrCodeData,
+                    clientName = comandaSelecionada!!.cliente.nome,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showQrCodeDialog = false }) {
+                    Text("Fechar")
+                }
+            }
+        )
     }
 }

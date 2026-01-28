@@ -31,7 +31,7 @@ fun QrCodeScannerScreen(
             if (result.contents == null) {
                 Toast.makeText(context, "Leitura cancelada", Toast.LENGTH_SHORT).show()
             } else {
-                val qrCodeData = result.contents
+                val qrCodeData = result.contents.trim()
                 val comanda = ComandaRepository.getComandaPorQrCode(qrCodeData)
 
                 if (comanda != null) {
