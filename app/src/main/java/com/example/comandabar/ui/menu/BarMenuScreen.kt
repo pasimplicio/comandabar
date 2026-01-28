@@ -45,13 +45,14 @@ fun BarMenuScreen(navController: NavController) {
                 navController.navigate("clientes")
             }
 
+            MenuItem("Gerenciar Categorias", Icons.Default.Category) {
+                navController.navigate("categorias")
+            }
+
             MenuItem("Gerenciar Produtos", Icons.Default.Inventory) {
                 navController.navigate("produtos")
             }
 
-            MenuItem("Gerenciar Categorias", Icons.Default.Category) {
-                navController.navigate("categorias")
-            }
 
             MenuItem("Gerar Comanda", Icons.AutoMirrored.Filled.ReceiptLong) {
                 navController.navigate("gerar_comanda")
