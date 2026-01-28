@@ -3,7 +3,6 @@ package com.example.comandabar.bar.ui.comanda
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -11,21 +10,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.comandabar.bar.viewmodel.ComandaViewModel
-import com.example.comandabar.shared.model.Comanda
 import com.example.comandabar.shared.model.ItemComanda
 import com.example.comandabar.ui.components.Footer
 import com.example.comandabar.ui.components.FooterItem
 import com.example.comandabar.ui.theme.*
 import com.example.comandabar.extensions.formatDouble
-import kotlinx.coroutines.launch
+import com.example.comandabar.ui.components.QrCodeCard
 
 @Composable
 fun ComandaBarScreen(
@@ -33,10 +29,10 @@ fun ComandaBarScreen(
     onBack: () -> Unit = { navController.popBackStack() },
     viewModel: ComandaViewModel = viewModel()
 ) {
-    val context = LocalContext.current
     val comanda by viewModel.comandaSelecionada.collectAsState()
 
     var showConfirmDialog by remember { mutableStateOf(false) }
+    var showQrCodeDialog by remember { mutableStateOf(false) }
 
     Surface(
         color = MaterialTheme.colorScheme.background,
@@ -54,30 +50,46 @@ fun ComandaBarScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Voltar",
-                                tint = Color.White
-                            )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Voltar",
+                                    tint = Color.White
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column {
+                                Text(
+                                    text = "Comanda",
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = comanda?.cliente?.nome ?: "",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
                         }
 
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column {
-                            Text(
-                                text = "Comanda",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = Color.White
-                            )
-                            Text(
-                                text = comanda?.cliente?.nome ?: "",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White.copy(alpha = 0.8f)
+                        IconButton(
+                            onClick = { showQrCodeDialog = true },
+                            enabled = comanda != null
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCode,
+                                contentDescription = "Mostrar QR Code",
+                                tint = Color.White
                             )
                         }
                     }
@@ -194,6 +206,25 @@ fun ComandaBarScreen(
             dismissButton = {
                 TextButton(onClick = { showConfirmDialog = false }) {
                     Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showQrCodeDialog && comanda != null) {
+        AlertDialog(
+            onDismissRequest = { showQrCodeDialog = false },
+            title = { Text("QR Code da Comanda") },
+            text = {
+                QrCodeCard(
+                    qrCodeData = comanda!!.qrCodeData,
+                    clientName = comanda!!.cliente.nome,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showQrCodeDialog = false }) {
+                    Text("Fechar")
                 }
             }
         )
