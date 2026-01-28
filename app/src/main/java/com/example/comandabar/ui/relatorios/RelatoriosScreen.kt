@@ -12,6 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,7 +32,27 @@ fun RelatoriosScreen(
     navController: NavController
 ) {
     val comandasFechadas by ComandaRepository.comandas.collectAsState()
-    val comandasFiltradas = comandasFechadas.filter { it.status == com.example.comandabar.shared.model.Comanda.Status.FECHADA }
+    var clienteFiltro by remember { mutableStateOf("") }
+    var dataInicialFiltro by remember { mutableStateOf("") }
+    var dataFinalFiltro by remember { mutableStateOf("") }
+
+    val dataInicialMillis = remember(dataInicialFiltro) {
+        parseDateMillis(dataInicialFiltro, isEndDate = false)
+    }
+    val dataFinalMillis = remember(dataFinalFiltro) {
+        parseDateMillis(dataFinalFiltro, isEndDate = true)
+    }
+
+    val comandasFiltradas = comandasFechadas
+        .filter { it.status == com.example.comandabar.shared.model.Comanda.Status.FECHADA }
+        .filter { comanda ->
+            val dataFechamento = comanda.fechadaEm ?: comanda.criadaEm
+            val clienteOk = clienteFiltro.isBlank() ||
+                    comanda.cliente.nome.contains(clienteFiltro.trim(), ignoreCase = true)
+            val dataInicialOk = dataInicialMillis == null || dataFechamento >= dataInicialMillis
+            val dataFinalOk = dataFinalMillis == null || dataFechamento <= dataFinalMillis
+            clienteOk && dataInicialOk && dataFinalOk
+        }
 
     val totalVendas = comandasFiltradas.sumOf { it.total }
     val totalComandas = comandasFiltradas.size
@@ -103,6 +126,62 @@ fun RelatoriosScreen(
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    text = "Filtros",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                                OutlinedTextField(
+                                    value = clienteFiltro,
+                                    onValueChange = { clienteFiltro = it },
+                                    label = { Text("Cliente") },
+                                    placeholder = { Text("Nome do cliente") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = dataInicialFiltro,
+                                        onValueChange = { dataInicialFiltro = it },
+                                        label = { Text("Data inicial") },
+                                        placeholder = { Text("dd/MM/yyyy") },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true
+                                    )
+                                    OutlinedTextField(
+                                        value = dataFinalFiltro,
+                                        onValueChange = { dataFinalFiltro = it },
+                                        label = { Text("Data final") },
+                                        placeholder = { Text("dd/MM/yyyy") },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true
+                                    )
+                                }
+                                Text(
+                                    text = "Formato das datas: dd/MM/yyyy",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+
                         // Cards de resumo
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -324,4 +403,29 @@ fun ComandaRelatorioCard(comanda: com.example.comandabar.shared.model.Comanda) {
 fun formatDate(timestamp: Long): String {
     val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
+}
+
+private fun parseDateMillis(dateText: String, isEndDate: Boolean): Long? {
+    if (dateText.isBlank()) return null
+    return try {
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val parsedDate = sdf.parse(dateText.trim()) ?: return null
+        val calendar = Calendar.getInstance().apply {
+            time = parsedDate
+            if (isEndDate) {
+                set(Calendar.HOUR_OF_DAY, 23)
+                set(Calendar.MINUTE, 59)
+                set(Calendar.SECOND, 59)
+                set(Calendar.MILLISECOND, 999)
+            } else {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+        }
+        calendar.timeInMillis
+    } catch (exception: Exception) {
+        null
+    }
 }
