@@ -102,7 +102,10 @@ object ComandaRepository {
     }
 
     fun adicionarProduto(produto: Produto) {
-        val comanda = _comandaAtiva.value ?: return
+        val comanda = _comandaAtiva.value ?: _comandaSelecionada.value ?: return
+        if (_comandaAtiva.value == null) {
+            _comandaAtiva.value = comanda
+        }
 
         val itens = comanda.itens.toMutableList()
         val index = itens.indexOfFirst { it.produto.id == produto.id }

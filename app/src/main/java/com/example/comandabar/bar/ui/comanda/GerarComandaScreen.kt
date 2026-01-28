@@ -179,6 +179,20 @@ fun GerarComandaScreen(
                     }
                 }
             }
+
+            Button(
+                onClick = { navController.navigate("comanda_bar") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Voltar para a comanda")
+            }
         }
     }
 }
