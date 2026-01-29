@@ -5,15 +5,15 @@ import com.example.comandabar.bar.model.Produto
 import com.example.comandabar.cliente.viewmodel.Cliente
 import com.example.comandabar.shared.model.Comanda
 import com.example.comandabar.shared.model.ItemComanda
-import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
 object ComandaRepository {
-    private val gson = Gson()
-
+    private const val QR_PREFIX = "COMANDA:"
+    private val comandaIdRegex =
+        Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
     private val _comandaAtiva = MutableStateFlow<Comanda?>(null)
     val comandaAtiva: StateFlow<Comanda?> = _comandaAtiva.asStateFlow()
 
@@ -182,95 +182,22 @@ object ComandaRepository {
             return directMatch
         }
 
-        val payload = parseQrPayload(normalized) ?: return null
-        val existing = _comandas.value.find { it.id == payload.id }
-        if (existing != null) {
-            return existing
-        }
-
-        val comandaFromQr = payload.toComanda()
-        _comandas.value = _comandas.value + comandaFromQr
-        _comandaSelecionada.value = comandaFromQr
-        salvarComandas()
-        salvarComandaSelecionada()
-        atualizarComandasAtivas()
-        return comandaFromQr
+        val comandaId = parseQrPayload(normalized) ?: return null
+        return _comandas.value.find { it.id == comandaId }
     }
 
     private fun buildQrPayload(comanda: Comanda): String {
-        val payload = QrComandaPayload(
-            id = comanda.id,
-            clienteCodigo = comanda.cliente.codigo,
-            clienteNome = comanda.cliente.nome,
-            itens = comanda.itens.map { item ->
-                QrComandaItem(
-                    produtoId = item.produto.id,
-                    produtoNome = item.produto.nome,
-                    produtoPreco = item.produto.preco,
-                    produtoEmoji = item.produto.emoji,
-                    produtoCategoriaId = item.produto.categoria.id,
-                    produtoCategoriaNome = item.produto.categoria.nome,
-                    quantidade = item.quantidade
-                )
-            },
-            status = comanda.status.name,
-            criadaEm = comanda.criadaEm,
-            fechadaEm = comanda.fechadaEm
-        )
-        return gson.toJson(payload)
+        return "$QR_PREFIX${comanda.id}"
     }
 
-    private fun parseQrPayload(qrCodeData: String): QrComandaPayload? {
-        return try {
-            gson.fromJson(qrCodeData, QrComandaPayload::class.java)
-        } catch (e: Exception) {
-            null
+    private fun parseQrPayload(qrCodeData: String): String? {
+        val trimmed = qrCodeData.trim()
+        val prefixIndex = trimmed.indexOf(QR_PREFIX)
+        val candidate = when {
+            prefixIndex >= 0 -> trimmed.substring(prefixIndex + QR_PREFIX.length).trim()
+            else -> trimmed
         }
+        val uuidMatch = comandaIdRegex.find(candidate) ?: comandaIdRegex.find(trimmed)
+        return uuidMatch?.value
     }
-
-    private data class QrComandaPayload(
-        val id: String,
-        val clienteCodigo: String,
-        val clienteNome: String,
-        val itens: List<QrComandaItem>,
-        val status: String,
-        val criadaEm: Long,
-        val fechadaEm: Long?
-    ) {
-        fun toComanda(): Comanda {
-            val cliente = Cliente(clienteCodigo, clienteNome)
-            val itensConvertidos = itens.map { item ->
-                val produto = Produto(
-                    id = item.produtoId,
-                    nome = item.produtoNome,
-                    preco = item.produtoPreco,
-                    emoji = item.produtoEmoji,
-                    categoria = com.example.comandabar.bar.model.Categoria(
-                        id = item.produtoCategoriaId,
-                        nome = item.produtoCategoriaNome
-                    )
-                )
-                ItemComanda(produto, item.quantidade)
-            }
-            return Comanda(
-                id = id,
-                cliente = cliente,
-                itens = itensConvertidos,
-                status = Comanda.Status.valueOf(status),
-                criadaEm = criadaEm,
-                fechadaEm = fechadaEm,
-                qrCodeData = gson.toJson(this)
-            )
-        }
-    }
-
-    private data class QrComandaItem(
-        val produtoId: String,
-        val produtoNome: String,
-        val produtoPreco: Double,
-        val produtoEmoji: String,
-        val produtoCategoriaId: String,
-        val produtoCategoriaNome: String,
-        val quantidade: Int
-    )
 }
