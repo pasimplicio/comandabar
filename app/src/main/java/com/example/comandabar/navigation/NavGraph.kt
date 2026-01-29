@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.example.comandabar.bar.ui.menu.BarMenuScreen
 
 import com.example.comandabar.ui.HomeScreen
+import com.example.comandabar.ui.SplashScreen
 
 import com.example.comandabar.ui.relatorios.RelatoriosScreen
 
@@ -24,7 +25,6 @@ import com.example.comandabar.bar.ui.produtos.ProdutoFormScreen
 import com.example.comandabar.bar.ui.produtos.ProdutosBarScreen
 
 import com.example.comandabar.bar.ui.qrcode.QrCodeScreen
-import com.example.comandabar.bar.ui.qrcode.QrCodeScannerScreen
 
 import com.example.comandabar.cliente.ui.home.ClienteFormScreen
 import com.example.comandabar.cliente.ui.home.ClienteHomeScreen
@@ -34,8 +34,12 @@ import com.example.comandabar.cliente.ui.comanda.ClienteComandaScreen
 fun NavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = "home"
+        startDestination = "splash"
     ) {
+
+        composable("splash") {
+            SplashScreen(navController = navController)
+        }
 
         // HOME (Menu do Bar)
         composable("home") {
@@ -152,10 +156,6 @@ fun NavGraph(navController: NavHostController) {
         // QR CODE
         composable("qrcode") {
             QrCodeScreen(navController = navController)
-        }
-
-        composable("qrcode_scanner") {
-            QrCodeScannerScreen(navController = navController)
         }
 
         // CLIENTE (Área do cliente)
