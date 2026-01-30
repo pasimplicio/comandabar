@@ -59,10 +59,10 @@ fun QrCodeScreen(navController: NavController) {
         FooterItem("Home", Icons.Default.Home) {
             navController.navigate("home")
         },
-/*        FooterItem("Menu", Icons.Default.RestaurantMenu) {
-            ModuleRepository.limparSelecao()
-            navController.navigate("home")
-        }*/
+        /*        FooterItem("Menu", Icons.Default.RestaurantMenu) {
+                    ModuleRepository.limparSelecao()
+                    navController.navigate("home")
+                }*/
     )
 
     Scaffold(
@@ -155,6 +155,11 @@ fun QrCodeScreen(navController: NavController) {
                                 )
                                 Text(
                                     text = "Itens: ${comanda.itens.size} • Total: R$ ${"%.2f".format(comanda.total)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                                Text(
+                                    text = "Status: ${if (comanda.isAberta()) "Aberta" else "Fechada"}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                 )

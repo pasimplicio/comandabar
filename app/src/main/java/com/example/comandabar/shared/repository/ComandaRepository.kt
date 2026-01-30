@@ -69,6 +69,12 @@ object ComandaRepository {
         }
     }
 
+    fun produtoEmUso(produtoId: String): Boolean {
+        return _comandas.value.any { comanda ->
+            comanda.itens.any { item -> item.produto.id == produtoId }
+        }
+    }
+
     fun verificarClienteTemComandaAberta(cliente: Cliente): Boolean {
         return _comandas.value.any {
             it.cliente.codigo == cliente.codigo &&
@@ -242,12 +248,9 @@ object ComandaRepository {
             when {
                 field.startsWith("C:") -> clienteCodigo = decodeField(field.removePrefix("C:"))
                 field.startsWith("N:") -> clienteNome = decodeField(field.removePrefix("N:"))
-                field.startsWith("S:") -> status = runCatching {
-                    Comanda.Status.valueOf(field.removePrefix("S:"))
-                }.getOrNull()
-                field.startsWith("I:") -> {
-                    itens = parseItensPayload(field.removePrefix("I:"))
-                }
+                field.startsWith("S:") -> status =
+                    runCatching { Comanda.Status.valueOf(field.removePrefix("S:")) }.getOrNull()
+                field.startsWith("I:") -> itens = parseItensPayload(field.removePrefix("I:"))
             }
         }
 
@@ -261,87 +264,60 @@ object ComandaRepository {
     }
 
     private fun parseItensPayload(payload: String): List<QrItemPayload> {
-        if (payload.isBlank()) {
-            return emptyList()
-        }
-        return payload.split(QR_ITEM_SEPARATOR)
-            .mapNotNull { item ->
-                val parts = item.split(QR_ITEM_FIELD_SEPARATOR)
-                if (parts.size < 2) {
-                    return@mapNotNull null
-                }
-                val produtoId = parts[0].trim()
-                val quantidade = parts.getOrNull(1)?.toIntOrNull() ?: 1
-                val preco = parts.getOrNull(2)?.toDoubleOrNull()
-                val nome = parts.getOrNull(3)?.let { decodeField(it) }
-                val emoji = parts.getOrNull(4)?.let { decodeField(it) }
-                val categoriaId = parts.getOrNull(5)?.let { decodeField(it) }
-                val categoriaNome = parts.getOrNull(6)?.let { decodeField(it) }
+        if (payload.isBlank()) return emptyList()
+        return payload.split(QR_ITEM_SEPARATOR).mapNotNull { itemRaw ->
+            val parts = itemRaw.split(QR_ITEM_FIELD_SEPARATOR)
+            if (parts.size < 7) {
+                null
+            } else {
                 QrItemPayload(
-                    produtoId = produtoId,
-                    quantidade = quantidade,
-                    preco = preco,
-                    nome = nome,
-                    emoji = emoji,
-                    categoriaId = categoriaId,
-                    categoriaNome = categoriaNome
+                    produtoId = parts[0],
+                    quantidade = parts[1].toIntOrNull() ?: 1,
+                    preco = parts[2].toDoubleOrNull(),
+                    nome = decodeField(parts[3]),
+                    emoji = decodeField(parts[4]),
+                    categoriaId = decodeField(parts[5]),
+                    categoriaNome = decodeField(parts[6])
                 )
             }
+        }
     }
 
     private fun criarComandaFromQrPayload(payload: QrPayload): Comanda {
-        val clienteCodigo = payload.clienteCodigo ?: "SEM-CODIGO"
-        val clienteNome = payload.clienteNome ?: "Cliente"
-        val cliente = Cliente(clienteCodigo, clienteNome)
+        val cliente = Cliente(
+            codigo = payload.clienteCodigo ?: "QR-${payload.id.take(8)}",
+            nome = payload.clienteNome ?: "Cliente QR"
+        )
 
-        val itensConvertidos = payload.itens.mapNotNull { item ->
+        val itens = payload.itens.mapNotNull { item ->
             val produto = ProdutoRepository.getProdutoById(item.produtoId)
                 ?: item.toProdutoFallback()
-                ?: return@mapNotNull null
-            ItemComanda(produto, item.quantidade)
+            produto?.let { ItemComanda(it, item.quantidade) }
         }
 
         val comanda = Comanda(
             id = payload.id,
             cliente = cliente,
-            itens = itensConvertidos,
+            itens = itens,
             status = payload.status ?: Comanda.Status.ABERTA,
             criadaEm = System.currentTimeMillis(),
             fechadaEm = null,
-            qrCodeData = buildQrPayload(
-                Comanda(
-                    id = payload.id,
-                    cliente = cliente,
-                    itens = itensConvertidos,
-                    status = payload.status ?: Comanda.Status.ABERTA,
-                    criadaEm = System.currentTimeMillis(),
-                    fechadaEm = null,
-                    qrCodeData = ""
-                )
-            )
+            qrCodeData = ""
         )
-
-        _comandas.value = _comandas.value + comanda
-        _comandaSelecionada.value = comanda
-        salvarComandas()
-        salvarComandaSelecionada()
-        atualizarComandasAtivas()
-        return comanda
+        return comanda.copy(qrCodeData = buildQrPayload(comanda))
     }
 
     private fun QrItemPayload.toProdutoFallback(): Produto? {
-        if (nome.isNullOrBlank()) {
-            return null
-        }
+        val nomeFallback = nome ?: return null
         val categoria = Categoria(
-            id = categoriaId ?: "sem_categoria",
-            nome = categoriaNome ?: "Outros"
+            id = categoriaId ?: UUID.randomUUID().toString(),
+            nome = categoriaNome ?: "Categoria"
         )
         return Produto(
             id = produtoId,
-            nome = nome,
+            nome = nomeFallback,
             preco = preco ?: 0.0,
-            emoji = emoji ?: "🍽️",
+            emoji = emoji ?: "🍺",
             categoria = categoria
         )
     }
@@ -365,10 +341,10 @@ object ComandaRepository {
     private data class QrItemPayload(
         val produtoId: String,
         val quantidade: Int,
-        val preco: Double? = null,
-        val nome: String? = null,
-        val emoji: String? = null,
-        val categoriaId: String? = null,
-        val categoriaNome: String? = null
+        val preco: Double?,
+        val nome: String?,
+        val emoji: String?,
+        val categoriaId: String?,
+        val categoriaNome: String?
     )
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.example.comandabar.bar.model.Categoria
 import com.example.comandabar.bar.model.Produto
 import com.example.comandabar.bar.repository.ProdutoRepository
+import com.example.comandabar.shared.repository.ComandaRepository
 import kotlinx.coroutines.flow.StateFlow
 
 class ProdutoViewModel : ViewModel() {
@@ -31,8 +32,12 @@ class ProdutoViewModel : ViewModel() {
         ProdutoRepository.atualizar(produto)
     }
 
-    fun remover(id: String) {
+    fun remover(id: String): Boolean {
+        if (ComandaRepository.produtoEmUso(id)) {
+            return false
+        }
         ProdutoRepository.remover(id)
+        return true
     }
 
     fun getProdutoById(id: String): Produto? {

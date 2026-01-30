@@ -1,5 +1,14 @@
 package com.example.comandabar.ui.relatorios
 
+import android.content.ContentValues
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
+import android.os.Environment
+import android.provider.MediaStore
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -25,12 +35,14 @@ import com.example.comandabar.shared.repository.ComandaRepository
 import com.example.comandabar.ui.components.Footer
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RelatoriosScreen(
     navController: NavController
 ) {
+    val context = LocalContext.current
     val comandasFechadas by ComandaRepository.comandas.collectAsState()
     var clienteFiltro by remember { mutableStateOf("") }
     var dataInicialFiltro by remember { mutableStateOf("") }
@@ -136,8 +148,8 @@ fun RelatoriosScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    .padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
                                     text = "Filtros",
@@ -151,7 +163,8 @@ fun RelatoriosScreen(
                                     label = { Text("Cliente") },
                                     placeholder = { Text("Nome do cliente") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    textStyle = MaterialTheme.typography.bodySmall
                                 )
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -163,7 +176,8 @@ fun RelatoriosScreen(
                                         label = { Text("Data inicial") },
                                         placeholder = { Text("dd/MM/yyyy") },
                                         modifier = Modifier.weight(1f),
-                                        singleLine = true
+                                        singleLine = true,
+                                        textStyle = MaterialTheme.typography.bodySmall
                                     )
                                     OutlinedTextField(
                                         value = dataFinalFiltro,
@@ -171,7 +185,8 @@ fun RelatoriosScreen(
                                         label = { Text("Data final") },
                                         placeholder = { Text("dd/MM/yyyy") },
                                         modifier = Modifier.weight(1f),
-                                        singleLine = true
+                                        singleLine = true,
+                                        textStyle = MaterialTheme.typography.bodySmall
                                     )
                                 }
                                 Text(
@@ -240,6 +255,25 @@ fun RelatoriosScreen(
                                     )
                                 }
                             }
+                        }
+
+                        Button(
+                            onClick = {
+                                exportarRelatorioPdf(
+                                    context = context,
+                                    comandas = comandasFiltradas,
+                                    totalVendas = totalVendas,
+                                    totalComandas = totalComandas
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PictureAsPdf,
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Exportar relatório em PDF")
                         }
 
                         Text(
@@ -427,5 +461,115 @@ private fun parseDateMillis(dateText: String, isEndDate: Boolean): Long? {
         calendar.timeInMillis
     } catch (exception: Exception) {
         null
+    }
+}
+
+private fun exportarRelatorioPdf(
+    context: Context,
+    comandas: List<com.example.comandabar.shared.model.Comanda>,
+    totalVendas: Double,
+    totalComandas: Int
+) {
+    val document = PdfDocument()
+    var pageNumber = 1
+    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, pageNumber).create()
+    var page = document.startPage(pageInfo)
+    var canvas = page.canvas
+    val paint = Paint()
+    var yPosition = 40
+    val xPosition = 40
+    val logoBitmap = BitmapFactory.decodeResource(context.resources, com.example.comandabar.R.drawable.logo)
+    val maxLogoWidth = 56
+    val maxLogoHeight = 56
+    val logoWidth = min(logoBitmap.width, maxLogoWidth)
+    val logoHeight = min(logoBitmap.height, maxLogoHeight)
+    val scaledLogo = Bitmap.createScaledBitmap(logoBitmap, logoWidth, logoHeight, true)
+
+    canvas.drawRect(
+        24f,
+        24f,
+        (pageInfo.pageWidth - 24).toFloat(),
+        120f,
+        paint.apply {
+            color = android.graphics.Color.parseColor("#F5F0EE")
+            style = Paint.Style.FILL
+        }
+    )
+    canvas.drawBitmap(scaledLogo, 40f, 40f, null)
+    paint.color = android.graphics.Color.parseColor("#3E2723")
+    paint.textSize = 20f
+    paint.isFakeBoldText = true
+    canvas.drawText("ComandaBar", 112f, 64f, paint)
+    paint.textSize = 12f
+    paint.isFakeBoldText = false
+    canvas.drawText("Relatório de comandas fechadas", 112f, 84f, paint)
+    paint.textSize = 11f
+    paint.color = android.graphics.Color.parseColor("#6D4C41")
+    val dataGeracao = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+    canvas.drawText("Gerado em: $dataGeracao", 112f, 102f, paint)
+
+    yPosition = 150
+    paint.color = android.graphics.Color.BLACK
+    paint.textSize = 12f
+    canvas.drawText("Total de vendas: R$ ${"%.2f".format(totalVendas)}", xPosition.toFloat(), yPosition.toFloat(), paint)
+    yPosition += 18
+    canvas.drawText("Comandas fechadas: $totalComandas", xPosition.toFloat(), yPosition.toFloat(), paint)
+    yPosition += 24
+
+    paint.isFakeBoldText = true
+    canvas.drawText("Detalhes:", xPosition.toFloat(), yPosition.toFloat(), paint)
+    paint.isFakeBoldText = false
+    yPosition += 18
+
+    if (comandas.isEmpty()) {
+        canvas.drawText("Nenhuma comanda encontrada.", xPosition.toFloat(), yPosition.toFloat(), paint)
+    } else {
+        comandas.forEach { comanda ->
+            val linha = "Comanda ${comanda.id.take(8)} • ${comanda.cliente.nome} • " +
+                    "R$ ${"%.2f".format(comanda.total)} • ${formatDate(comanda.fechadaEm ?: comanda.criadaEm)}"
+            canvas.drawText(linha, xPosition.toFloat(), yPosition.toFloat(), paint)
+            yPosition += 16
+            if (yPosition > pageInfo.pageHeight - 40) {
+                document.finishPage(page)
+                pageNumber += 1
+                val nextPageInfo = PdfDocument.PageInfo.Builder(595, 842, pageNumber).create()
+                page = document.startPage(nextPageInfo)
+                canvas = page.canvas
+                yPosition = 40
+            }
+        }
+    }
+
+    document.finishPage(page)
+
+    val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+    val fileName = "relatorio_comandas_${dateFormat.format(Date())}.pdf"
+    val contentValues = ContentValues().apply {
+        put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+        put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+    }
+
+    val resolver = context.contentResolver
+    val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+    if (uri == null) {
+        document.close()
+        Toast.makeText(context, "Não foi possível salvar o PDF.", Toast.LENGTH_LONG).show()
+        return
+    }
+
+    try {
+        resolver.openOutputStream(uri)?.use { outputStream ->
+            document.writeTo(outputStream)
+        }
+        Toast.makeText(
+            context,
+            "PDF salvo em Downloads: $fileName",
+            Toast.LENGTH_LONG
+        ).show()
+    } catch (exception: Exception) {
+        Toast.makeText(context, "Erro ao salvar PDF: ${exception.localizedMessage}", Toast.LENGTH_LONG).show()
+    } finally {
+        document.close()
     }
 }

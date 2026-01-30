@@ -192,9 +192,9 @@ fun ComandaBarScreen(
                             FooterItem("Home", Icons.Default.Home) {
                                 navController.navigate("home")
                             },
-/*                            FooterItem("Menu", Icons.Default.RestaurantMenu) {
-                                navController.navigate("produtos")
-                            }*/
+                            /*                            FooterItem("Menu", Icons.Default.RestaurantMenu) {
+                                                            navController.navigate("produtos_comanda")
+                                                        }*/
                         )
                     )
                 }
@@ -212,7 +212,7 @@ fun ComandaBarScreen(
                 TextButton(
                     onClick = {
                         showConfirmDialog = false
-                        navController.navigate("produtos")
+                        navController.navigate("produtos_comanda")
                     }
                 ) {
                     Text("Sim")

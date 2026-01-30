@@ -1,4 +1,4 @@
-package com.example.comandabar.bar.ui.menu
+package com.example.comandabar.ui.menu
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons

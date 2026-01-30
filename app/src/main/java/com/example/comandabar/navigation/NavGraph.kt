@@ -6,12 +6,13 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.comandabar.bar.ui.menu.BarMenuScreen
+import com.example.comandabar.ui.menu.BarMenuScreen
 
 import com.example.comandabar.ui.HomeScreen
 import com.example.comandabar.ui.SplashScreen
 
 import com.example.comandabar.ui.relatorios.RelatoriosScreen
+import com.example.comandabar.ui.paywall.PaywallScreen
 
 import com.example.comandabar.bar.ui.categoria.CategoriaFormScreen
 import com.example.comandabar.bar.ui.categoria.CategoriaListScreen
@@ -49,6 +50,10 @@ fun NavGraph(navController: NavHostController) {
         // MENU BAR (se você usa essa tela separada)
         composable("bar_menu") {
             BarMenuScreen(navController = navController)
+        }
+
+        composable("paywall") {
+            PaywallScreen()
         }
 
         // CLIENTES
@@ -104,7 +109,19 @@ fun NavGraph(navController: NavHostController) {
                 onAdicionarProduto = { navController.navigate("produto_form") },
                 onEditarProduto = { produtoId ->
                     navController.navigate("produto_form/$produtoId")
-                }
+                },
+                isComandaMode = false
+            )
+        }
+
+        composable("produtos_comanda") {
+            ProdutosBarScreen(
+                onBack = { navController.popBackStack() },
+                onAdicionarProduto = { navController.navigate("produto_form") },
+                onEditarProduto = { produtoId ->
+                    navController.navigate("produto_form/$produtoId")
+                },
+                isComandaMode = true
             )
         }
 

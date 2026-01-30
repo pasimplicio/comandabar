@@ -1,5 +1,6 @@
 package com.example.comandabar.bar.ui.produtos
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -30,10 +32,13 @@ fun ProdutosBarScreen(
     onBack: () -> Unit,
     onAdicionarProduto: () -> Unit,
     onEditarProduto: (String) -> Unit,
-    produtoViewModel: ProdutoViewModel = viewModel()
+    produtoViewModel: ProdutoViewModel = viewModel(),
+    isComandaMode: Boolean = false
 ) {
     val produtos by produtoViewModel.produtos.collectAsState()
     var produtoParaExcluir by remember { mutableStateOf<Produto?>(null) }
+    var erroUsoProduto by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Surface(
         color = MaterialTheme.colorScheme.background,
@@ -124,11 +129,25 @@ fun ProdutosBarScreen(
                                 ProdutoCard(
                                     produto = produto,
                                     onEditClick = { onEditarProduto(produto.id) },
-                                    onDeleteClick = { produtoParaExcluir = produto },
+                                    onDeleteClick = {
+                                        if (!isComandaMode) {
+                                            produtoParaExcluir = produto
+                                        }
+                                    },
+                                    showDeleteButton = !isComandaMode,
                                     onAddToComanda = {
                                         // ✅ CORREÇÃO: adiciona na comanda ativa
                                         ComandaRepository.adicionarProduto(produto)
                                         // ✅ COMPLETA O FLUXO SEM MUDAR O CONCEITO
+                                        if (isComandaMode) {
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Produto incluído na comanda!",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
+                                        }
                                         onBack()
                                     }
                                 )
@@ -154,38 +173,56 @@ fun ProdutosBarScreen(
                     }
                 }
 
-                // Dialog exclusão
-                produtoParaExcluir?.let { produto ->
-                    AlertDialog(
-                        onDismissRequest = { produtoParaExcluir = null },
-                        title = { Text("Excluir produto?") },
-                        text = {
-                            Text("${produto.emoji} ${produto.nome}")
-                        },
-                        confirmButton = {
-                            Button(
-                                onClick = {
-                                    produtoViewModel.remover(produto.id)
-                                    produtoParaExcluir = null
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error
-                                )
-                            ) {
-                                Text("Excluir")
+                if (!isComandaMode) {
+                    // Dialog exclusão
+                    produtoParaExcluir?.let { produto ->
+                        AlertDialog(
+                            onDismissRequest = { produtoParaExcluir = null },
+                            title = { Text("Excluir produto?") },
+                            text = {
+                                Text("${produto.emoji} ${produto.nome}")
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        val removido = produtoViewModel.remover(produto.id)
+                                        if (!removido) erroUsoProduto = true
+                                        produtoParaExcluir = null
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Text("Excluir")
+                                }
+                            },
+                            dismissButton = {
+                                OutlinedButton(onClick = { produtoParaExcluir = null }) {
+                                    Text("Cancelar")
+                                }
                             }
-                        },
-                        dismissButton = {
-                            OutlinedButton(onClick = { produtoParaExcluir = null }) {
-                                Text("Cancelar")
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
             }
 
             Footer()
         }
+    }
+
+    if (erroUsoProduto) {
+        AlertDialog(
+            onDismissRequest = { erroUsoProduto = false },
+            title = { Text("Produto em uso") },
+            text = {
+                Text("Este produto está associado a uma ou mais comandas e não pode ser removido.")
+            },
+            confirmButton = {
+                TextButton(onClick = { erroUsoProduto = false }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
 
@@ -194,7 +231,8 @@ fun ProdutoCard(
     produto: Produto,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onAddToComanda: () -> Unit
+    onAddToComanda: () -> Unit,
+    showDeleteButton: Boolean = true
 ) {
     Card(
         modifier = Modifier
@@ -221,13 +259,15 @@ fun ProdutoCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedButton(
-                onClick = onDeleteClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Excluir Produto")
+            if (showDeleteButton) {
+                OutlinedButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Excluir Produto")
+                }
             }
         }
     }

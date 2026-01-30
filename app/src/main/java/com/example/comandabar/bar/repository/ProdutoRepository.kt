@@ -17,7 +17,12 @@ object ProdutoRepository {
     }
 
     private fun carregarDadosPersistentes() {
-        _produtos.value = ProdutoDao.carregarProdutos()
+        val produtosPersistidos = ProdutoDao.carregarProdutos()
+        _produtos.value = if (produtosPersistidos.isEmpty()) {
+            SeedData.produtos.also { ProdutoDao.salvarProdutos(it) }
+        } else {
+            produtosPersistidos
+        }
     }
 
     private fun salvarProdutos() {

@@ -62,7 +62,8 @@ object CategoriaRepository {
         val json = prefs.getString(KEY_CATEGORIAS, null)
 
         if (json.isNullOrBlank()) {
-            _categorias.value = emptyList()
+            _categorias.value = SeedData.categorias
+            salvar()
             return
         }
 

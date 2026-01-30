@@ -119,247 +119,46 @@ fun ClienteComandaScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Header da comanda
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                    Text(
+                        text = "Olá, ${comanda.cliente.nome}!",
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold
                         )
+                    )
+
+                    Text(
+                        text = "Itens consumidos:",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Person,
-                                    contentDescription = "Cliente",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Text(
-                                    text = comanda.cliente.nome,
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
+                        items(comanda.itens) { item ->
+                            Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    "Status:",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Text(
-                                    comanda.status.name,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = if (comanda.status == com.example.comandabar.shared.model.Comanda.Status.ABERTA)
-                                            Color.Green else Color.Red,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    "Código:",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                                Text(
-                                    comanda.qrCodeData.take(20) + "...",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                            }
-                        }
-                    }
-
-                    // Itens da comanda
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Text(
-                                text = "Itens Consumidos (${comanda.itens.size})",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
                                 ),
-                                modifier = Modifier.padding(16.dp)
-                            )
-
-                            if (comanda.itens.isEmpty()) {
-                                Column(
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = 2.dp
+                                )
+                            ) {
+                                Row(
                                     modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(40.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Icon(
-                                        Icons.Default.ShoppingCart,
-                                        contentDescription = "Carrinho vazio",
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                        modifier = Modifier.size(64.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
-                                        text = "Nenhum item na comanda",
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                    )
-                                }
-                            } else {
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(bottom = 16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    items(comanda.itens) { item ->
-                                        Card(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 16.dp),
-                                            shape = RoundedCornerShape(12.dp),
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                            )
-                                        ) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .padding(16.dp)
-                                                    .fillMaxWidth(),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                                ) {
-                                                    Text(
-                                                        text = item.produto.emoji,
-                                                        style = MaterialTheme.typography.headlineMedium
-                                                    )
-                                                    Column {
-                                                        Text(
-                                                            item.produto.nome,
-                                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                                fontWeight = FontWeight.SemiBold
-                                                            )
-                                                        )
-                                                        Text(
-                                                            "R$ ${"%.2f".format(item.produto.preco)} cada",
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                                        )
-                                                    }
-                                                }
-
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                                ) {
-                                                    Badge(
-                                                        containerColor = MaterialTheme.colorScheme.primary,
-                                                        contentColor = Color.White
-                                                    ) {
-                                                        Text(
-                                                            "×${item.quantidade}",
-                                                            style = MaterialTheme.typography.labelMedium
-                                                        )
-                                                    }
-                                                    Text(
-                                                        "R$ ${"%.2f".format(item.subtotal)}",
-                                                        style = MaterialTheme.typography.titleMedium.copy(
-                                                            fontWeight = FontWeight.SemiBold,
-                                                            color = MaterialTheme.colorScheme.primary
-                                                        )
-                                                    )
-                                                }
-                                            }
-                                        }
+                                    Column {
+                                        Text(item.produto.nome, fontWeight = FontWeight.Bold)
+                                        Text("Qtd: ${item.quantidade}")
                                     }
+
+                                    Text("R$ ${"%.2f".format(item.subtotal)}")
                                 }
-                            }
-                        }
-                    }
-
-                    // Total
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(20.dp)
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                "TOTAL",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
-                            Text(
-                                "R$ ${"%.2f".format(comanda.total)}",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            )
-                        }
-                    }
-
-                    // Botões
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { navController.navigate("qrcode") },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(Icons.Default.CameraAlt, contentDescription = null)
-                                Text("Nova Leitura")
-                            }
-                        }
-
-                        Button(
-                            onClick = { navController.popBackStack() },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(Icons.Default.Home, contentDescription = null)
-                                Text("Início")
                             }
                         }
                     }
@@ -381,7 +180,7 @@ fun ClienteComandaScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showQrCodeDialog = false }) {
-                    Text("Fechar")
+                    Text("OK")
                 }
             }
         )
