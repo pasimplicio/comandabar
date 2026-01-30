@@ -9,8 +9,6 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.WineBar
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -23,8 +21,7 @@ import com.example.comandabar.shared.repository.ModuleRepository
 import com.example.comandabar.ui.components.Footer
 
 @Composable
-fun HomeScreen(navController: NavController) {
-    val selectedModule by ModuleRepository.selectedModule.collectAsState()
+fun MainHomeScreen(navController: NavController) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -73,53 +70,22 @@ fun HomeScreen(navController: NavController) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
-                when (selectedModule) {
-                    AppModule.CLIENTE -> {
-                        ModuleCard(
-                            title = "Módulo Cliente",
-                            subtitle = "Escanear QR Code da Comanda",
-                            icon = Icons.Default.QrCodeScanner
-                        ) {
-                            navController.navigate("qrcode")
-                        }
-                    }
-                    AppModule.BAR -> {
-                        ModuleCard(
-                            title = "Módulo Bar",
-                            subtitle = "Gerenciar comandas e produtos",
-                            icon = Icons.Default.WineBar
-                        ) {
-                            navController.navigate("bar_menu")
-                        }
-                    }
-                    null -> {
-                        ModuleCard(
-                            title = "Módulo Cliente",
-                            subtitle = "Escanear QR Code da Comanda",
-                            icon = Icons.Default.QrCodeScanner
-                        ) {
-                            ModuleRepository.selecionarModulo(AppModule.CLIENTE)
-                            navController.navigate("qrcode")
-                        }
-
-                        ModuleCard(
-                            title = "Módulo Bar",
-                            subtitle = "Gerenciar comandas e produtos",
-                            icon = Icons.Default.WineBar
-                        ) {
-                            ModuleRepository.selecionarModulo(AppModule.BAR)
-                            navController.navigate("bar_menu")
-                        }
-                    }
+                ModuleCard(
+                    title = "Módulo Cliente",
+                    subtitle = "Escanear QR Code da Comanda",
+                    icon = Icons.Default.QrCodeScanner
+                ) {
+                    ModuleRepository.selecionarModulo(AppModule.CLIENTE)
+                    navController.navigate("qrcode")
                 }
 
-                if (selectedModule != null) {
-                    TextButton(
-                        onClick = { ModuleRepository.limparSelecao() },
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    ) {
-                        Text("Trocar módulo")
-                    }
+                ModuleCard(
+                    title = "Módulo Bar",
+                    subtitle = "Gerenciar comandas e produtos",
+                    icon = Icons.Default.WineBar
+                ) {
+                    ModuleRepository.selecionarModulo(AppModule.BAR)
+                    navController.navigate("bar_menu")
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -134,6 +100,11 @@ fun HomeScreen(navController: NavController) {
             Footer()
         }
     }
+}
+
+@Composable
+fun HomeScreen(navController: NavController) {
+    MainHomeScreen(navController = navController)
 }
 
 @Composable

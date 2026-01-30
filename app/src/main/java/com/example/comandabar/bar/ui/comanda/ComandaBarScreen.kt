@@ -192,9 +192,9 @@ fun ComandaBarScreen(
                             FooterItem("Home", Icons.Default.Home) {
                                 navController.navigate("home")
                             },
-                            FooterItem("Menu", Icons.Default.RestaurantMenu) {
+/*                            FooterItem("Menu", Icons.Default.RestaurantMenu) {
                                 navController.navigate("produtos")
-                            }
+                            }*/
                         )
                     )
                 }

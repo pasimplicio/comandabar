@@ -16,8 +16,8 @@ import com.example.comandabar.ui.relatorios.RelatoriosScreen
 import com.example.comandabar.bar.ui.categoria.CategoriaFormScreen
 import com.example.comandabar.bar.ui.categoria.CategoriaListScreen
 
-import com.example.comandabar.bar.ui.comanda.ComandaBarScreen
 import com.example.comandabar.bar.ui.comanda.GerarComandaScreen
+import com.example.comandabar.bar.ui.comanda.ComandaBarScreen
 import com.example.comandabar.bar.ui.comanda.ListaComandasScreen
 import com.example.comandabar.bar.ui.comanda.VincularClienteComandaScreen
 

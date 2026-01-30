@@ -59,10 +59,10 @@ fun QrCodeScreen(navController: NavController) {
         FooterItem("Home", Icons.Default.Home) {
             navController.navigate("home")
         },
-        FooterItem("Menu", Icons.Default.RestaurantMenu) {
+/*        FooterItem("Menu", Icons.Default.RestaurantMenu) {
             ModuleRepository.limparSelecao()
             navController.navigate("home")
-        }
+        }*/
     )
 
     Scaffold(
