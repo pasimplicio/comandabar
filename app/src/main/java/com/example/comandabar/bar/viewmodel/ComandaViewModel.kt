@@ -32,6 +32,10 @@ class ComandaViewModel : ViewModel() {
         ComandaRepository.adicionarProduto(produto)
     }
 
+    fun removerProduto(produtoId: String) {
+        ComandaRepository.removerProduto(produtoId)
+    }
+
     fun fecharComanda(comandaId: String) {
         ComandaRepository.fecharComanda(comandaId)
     }

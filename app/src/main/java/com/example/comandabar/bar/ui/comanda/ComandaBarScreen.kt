@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.RestaurantMenu
@@ -149,7 +150,10 @@ fun ComandaBarScreen(
                             } else {
                                 LazyColumn {
                                     items(comanda!!.itens) { item ->
-                                        ItemComandaRow(item)
+                                        ItemComandaRow(
+                                            item = item,
+                                            onRemove = { viewModel.removerProduto(item.produto.id) }
+                                        )
                                     }
                                 }
                             }
@@ -247,14 +251,33 @@ fun ComandaBarScreen(
 }
 
 @Composable
-fun ItemComandaRow(item: ItemComanda) {
+fun ItemComandaRow(
+    item: ItemComanda,
+    onRemove: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("${item.produto.nome} x${item.quantidade}")
-        Text("R$ ${item.subtotal.formatDouble(2)}")
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.produto.nome,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Qtd: ${item.quantidade}")
+                Text("Unit: R$ ${item.produto.preco.formatDouble(2)}")
+                Text("Total: R$ ${item.subtotal.formatDouble(2)}")
+            }
+        }
+        IconButton(onClick = onRemove) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Remover ${item.produto.nome}"
+            )
+        }
     }
 }

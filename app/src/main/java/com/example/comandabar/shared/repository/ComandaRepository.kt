@@ -141,6 +141,16 @@ object ComandaRepository {
         atualizarComanda(comanda.copy(itens = itens))
     }
 
+    fun removerProduto(produtoId: String) {
+        val comanda = _comandaAtiva.value ?: _comandaSelecionada.value ?: return
+        val itens = comanda.itens.toMutableList()
+        val index = itens.indexOfFirst { it.produto.id == produtoId }
+        if (index >= 0) {
+            itens.removeAt(index)
+            atualizarComanda(comanda.copy(itens = itens))
+        }
+    }
+
     private fun atualizarComanda(comanda: Comanda) {
         val updatedComanda = comanda.copy(qrCodeData = buildQrPayload(comanda))
         _comandaAtiva.value = updatedComanda
